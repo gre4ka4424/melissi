@@ -1,0 +1,1 @@
+gcc melissi.c -o melissi

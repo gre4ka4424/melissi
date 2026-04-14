@@ -1,0 +1,6 @@
+greet
+{
+create scenario
+see scenarios
+test
+}
