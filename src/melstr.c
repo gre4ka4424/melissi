@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "melstr.h"
+#include "../hdrs/melstr.h"
 
 int STR_FindLength (char *text)
 {
@@ -30,6 +30,7 @@ char *STR_SkipCharacters (char *text, char character)
 	while (*text != '\0')
 	{
 		if (*text != character)
+		{
 			return text;
 		}
 		text++;
@@ -74,11 +75,29 @@ char *STR_GoToNextWord (char *text)
 int STR_CountWords (char *text)
 {
 	int counter = 0;
-	while (STR_GoToNextWord != NULL)
+	while (STR_GoToNextWord(text) != NULL)
 	{
 		counter++;
 	}
 	return counter;
+}
+
+int STR_FillWithFor(char *text, char character, int length)
+{
+	int index = 0;
+	for (index; index < length; index++)
+	{
+		*text = character;
+		text++;
+	}
+	return 0;
+}
+
+int STR_Init (char *text, int length)
+{
+	STR_FillTextWith(text, ' ', length - 1);
+	*(text + length) = '\0';
+	return 0;
 }
 
 int STR_CopyAB (char *textA, char *textB)
@@ -127,7 +146,7 @@ int STR_AreEqualFor (char *textA, char *textB, int range)
 	int equal = 0;
 	while (1)
 	{
-		if ((*textA != '\0') && (textB != '\0'))
+		if ((*textA != '\0') && (*textB != '\0'))
 		{
 			return 0;
 		}
@@ -137,7 +156,7 @@ int STR_AreEqualFor (char *textA, char *textB, int range)
 		}
 		if (equal == range)
 		{
-			
+			return 1;
 		}
 		textA++;
 		textB++;
@@ -145,4 +164,8 @@ int STR_AreEqualFor (char *textA, char *textB, int range)
 	}
 }
 
-int MegaPrint(char *)
+int MegaPrint(char *text, int length)
+{
+
+	return 0;
+}

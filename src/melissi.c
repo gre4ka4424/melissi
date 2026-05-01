@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "fileman.h"
+#include "../hdrs/fileman.h"
 
 #define FLOWER_NAME 32
 #define FLOWER_TYPES 8
@@ -59,8 +59,13 @@ struct Time
 
 int main ()
 {
-	printf("Hello Melissi!");
-	FILE *file = fopen("melissi.c", "r");
+	printf("Hello Melissi!\n");
+	FILE *file = fopen("src/melissi.c", "r");
+	if (file == NULL)
+	{
+		perror("Failed to open melissi.c\n");
+		return -1;
+	}
 	PrintFile(file);
 	return 0;
 }
