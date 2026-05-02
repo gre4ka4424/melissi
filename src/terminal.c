@@ -1,5 +1,6 @@
 #include "../hdrs/melstr.h"
 
+#define BUFFER 64
 #define COMMAND_NAME 32
 #define COMMANDS 32
 #define MENU_NAME 32
@@ -8,12 +9,23 @@
 #define ARGUMENTS 8
 #define ARGUMENT_NAME 32
 #define ARGUMENT_BUFFER 64
-#define ARGUMENT_STRING 0
-#define ARGUMENT_INT 1
-#define ARGUMENT_FLOAT 2
 #define BUTTON_NAME 32
 #define BUTTONS 8
 #define MENU_DESCRIPTION 128
+#define USED_OPTIONS 16
+
+
+#define ARGUMENT_STRING 0
+#define ARGUMENT_INT 1
+#define ARGUMENT_FLOAT 2
+#define OPTION_ARGUMENT 0
+#define OPTION_BUTTON 1
+
+struct Buffer
+{
+	char text[BUFFER];
+	int length;
+};
 
 struct Argument
 {
@@ -38,6 +50,21 @@ struct Menu
 	int buttonsAmount;
 	char description[MENU_DESCRIPTION];
 };
+
+struct UsedOptions
+{
+	struct Menu *arguments[ARGUMENTS];
+	struct Buttons *buttons[BUTTONS];
+}
+
+struct TerminalStatus
+{
+	struct Menu *currentMenu;
+	struct Menu menus[MENUS];
+	struct Buffer inputBuffer;
+	char loop;
+	struct UsedOptions usedOptions;
+}
 
 int ButtonsInit (struct Button buttons[])
 {
@@ -95,17 +122,87 @@ int MenusInit (struct Menu menus[])
 	return 0;
 }
 
-int CheckOption(char *text, struct Menu menu)
+int GetOptionPointer(struct Argument *argument, struct Buttons *button, void *option, int type)
 {
-	int index = 0;
-	int optionLength = 0;
-	while (1)
+	switch (type)
 	{
-		optionLength = STR_FindLength(menu.arguments[index]);
-		
+		case OPTION_ARGUMENT:
+			argument = (struct Argument *)option;
+			break;
+		case OPTION_BUTTON:
+			button = (struct Button *)option;
+			break;
+	}
+	return 0;
 }
 
-int DisplayMenu(struct Menu menu)
+int CheckOption(void *option, int optionType, char *text, struct Menu menu)
+{
+	STR_SkipCharactets(text, '@');
+	int index = 0;
+	int optionLength = 0;
+	for (index; index < menu.argumentsAmount; index++)
+	{
+		optionLength = STR_FindLength(menu.arguments[index].name);
+		if (STR_AreEqualFor(text, menu.arguments[index].name, optionLength) == 1)
+		{
+			*option = &menu.arguments[index].name;
+			*optionType = OPTION_ARGUMENT;
+			return 0;
+		}
+	}
+	index = 0;
+	for (index; index < buttonsAmount; index++)
+	{
+		optionLength = STR_FindLength(menu.buttons[index].name);
+		if (STR_AreEqualFor(text, menu.buttons[index].name, optionLength) == 1)
+		{
+			*option = &menu.buttons[index];
+			*optionType = OPTION_BUTTON;
+			return 0;
+		}
+	}
+	return -1;
+}
+
+int DisplayArgument (struct Argument argument)
+{
+	
+	printf("\"%s\"", argument.buffer);
+	switch (argument.type)
+		case ARGUMENT_STRING:
+			printf("(string)");
+			break;
+		case ARGUMENT_INT:
+			printf("(integer)");
+			break;
+		case ARGUMENT_FLOAT:
+			printf("(float)");
+			break;
+	return 0;
+}
+
+int DisplayButton (struct Button button)
+{
+	printf("%s", button.name);
+	return 0;
+}
+
+int DisplayOption (void *option, int optoonType)
+{
+	switch (optionType)
+	{
+		case OPTION_ARGUMENT:
+			DisplayArgument( *(struct Argument *)option );
+			break;
+		case OPTION_BUTTON:
+			DisplayButton( *(struct Button *)option);
+			break;
+	}
+	return 0;
+}
+
+int DisplayMenu(struct Menu menu, struct UsedMenus usedMenus)
 {
 	printf("%s\n", menu.name);
 	char *cursor = menu.description;
@@ -113,39 +210,81 @@ int DisplayMenu(struct Menu menu)
 	while (*cursor != '\0')
 	{
 		if (*cursor == '@')
-		{		
+		{
+			if (*(cursor + 1) == '@')
+			{
+				putchar('@');
+				cursor = cursor + 2;
+				continue;
+			}
 			printf("%d. ", optionCounter);
-			CheckOption(cursor, menu);
-			printf("%s", );
+			void *option;
+			int optionType;
+			if (CheckOption(&option, &optionType, cursor, menu) == -1)
+			{
+				continue;
+			}
+			usedOptions.
+			DisplayOption(option, optionType);
+			optionCounter++;
 		}
 		putchar(*cursor);
+		cursor++;
 	}
 	return 0;
 }
 
-int TerminalOutput()
+int TerminalOutput (struct Menu menu, void *usedMenus[])
 {
+	DisplayMenu(menu, usedMenus[]);
 	return 0;
 }
 
-int TerminalInput()
+int GetInput (struct Buffer buffer)
 {
-	return 0;
-}
-
-int TerminalLoop ()
-{
-	int condition = 1;
-	while (condition)
+	fgets(buffer.text, buffer.length, stdin);
+	char *newline = STR_FindCharacter(buffer.text, '\0');
+	if (newline == NULL)
 	{
-		TerminalOutput();
-		TerminalInput();
+		while ( getchar() != '\n' ) {}
+	}
+	else
+	{
+		*newline = '\0';
+	}
+	return 0;
+}
+
+int TerminalInput(struct Buffer buffer)
+{
+	printf("-> ");
+	GetInput(buffer);
+	return 0;
+}
+
+int TerminalProcess ()
+{
+	return 0;
+}
+
+int TerminalLoop (struct TerminalStatus terminalStatus)
+{
+	while (terminalStatus.loop)
+	{
+		TerminalOutput(*terminalStatus.currentMenu);
+		TerminalInput(terminalStatus.inputBuffer);
+		TerminalProcess();
 	}
 	return 0;
 }
 
 int TerminalInit ()
 {
-	TerminalLoop();
+	struct TerminalStatus terminalStatus;
+	MenusInit(terminalStatus.menus);
+	terminalStatus.currentMenu = &terminalStatus.menus[0];
+	terminalStatus.inputBuffer.length = BUFFER;
+	STR_Init(terminalStatus.inputBuffer.text, terminalStatus.imputBuffer.length);
+	TerminalLoop(terminalStatus);
 	return 0;
 }
